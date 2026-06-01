@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco-CrediNova</title>
+    <style>
+        /* --- ESTILOS CSS: Identidad Corporativa Verde Oscuro y Café --- */
+        :root {
+            --verde-oscuro: #1b4332;
+            --cafe-tierra: #4e3629;
+            --cafe-claro: #d7ccc8;
+            --blanco: #ffffff;
+            --gris-fondo: #f4f6f4;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--gris-fondo);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background-color: var(--verde-oscuro);
+            color: var(--blanco);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 5px solid var(--cafe-tierra);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            background: var(--blanco);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: var(--verde-oscuro);
+            border-bottom: 2px solid var(--cafe-claro);
+            padding-bottom: 8px;
+        }
+
+        .btn {
+            background-color: var(--cafe-tierra);
+            color: var(--blanco);
+            border: none;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background-color: var(--verde-oscuro);
+        }
+
+        .btn-secondary {
+            background-color: var(--verde-oscuro);
+        }
+        .btn-secondary:hover {
+            background-color: var(--cafe-tierra);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 15px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .box {
+            background-color: #f9f9f9;
+            border-left: 5px solid var(--verde-oscuro);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .qr-area {
+            background: #e8efe9;
+            border: 2px dashed var(--verde-oscuro);
+            padding: 15px;
+            text-align: center;
+            word-break: break-all;
+            font-family: monospace;
+            margin-top: 10px;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🏦 Banco-CrediNova</h1>
+        <p>La banca digital del futuro</p>
+    </header>
+
+    <!-- PANTALLA 1: ACCESO Y REGISTRO -->
+    <div id="pantalla-acceso" class="container">
+        <h2>🔒 Acceso al Sistema</h2>
+        <label><b>Usuario:</b></label>
+        <input type="text" id="login-usuario" placeholder="Ej. alex">
+        
+        <label><b>Contraseña / PIN:</b></label>
+        <input type="password" id="login-password" placeholder="xxxx">
+        
+        <button class="btn" onclick="iniciarSesion()">Iniciar Sesión</button>
+        
+        <hr style="margin: 25px 0; border: 0; border-top: 1px solid var(--cafe-claro);">
+        
+        <h2>📝 Registrar Nueva Cuenta</h2>
+        <label><b>Nuevo Usuario:</b></label>
+        <input type="text" id="reg-usuario" placeholder="Crea tu usuario">
+        
+        <label><b>Contraseña:</b></label>
+        <input type="password" id="reg-password" placeholder="Crea tu contraseña">
+        
+        <button class="btn btn-secondary" onclick="registrarCuenta()">Crear Mi Cuenta</button>
+    </div>
+
+    <!-- PANTALLA 2: BANCA EN LÍNEA (MENÚ PRINCIPAL) -->
+    <div id="pantalla-banca" class="container hidden">
+        <h2>👋 ¡Bienvenido, <span id="nombre-titular" style="color: var(--cafe-tierra);"></span>!</h2>
+        
+        <div class="box">
+            <h3>💰 Resumen de Cuenta</h3>
+            <p><b>No. Cuenta:</b> <span id="txt-cuenta"></span></p>
+            <p><b>Saldo Disponible:</b> <span id="txt-saldo" style="font-size: 20px; font-weight: bold; color: var(--verde-oscuro);"></span></p>
+        </div>
+
+        <!-- OPERACIÓN: TRANSFERENCIA TRADICIONAL -->
+        <h3>💸 Transferencia Directa</h3>
+        <input type="text" id="trans-destino" placeholder="Usuario destino">
+        <input type="number" id="trans-monto" placeholder="Monto en Quetzales (Q)" min="1">
+        <button class="btn" onclick="realizarTransferencia()">Enviar Dinero</button>
+
+        <!-- OPERACIÓN: CÓDIGO QR -->
+        <h3>📷 Módulo QR Express</h3>
+        <input type="number" id="qr-monto" placeholder="Monto a cobrar con QR (Q)">
+        <button class="btn btn-secondary" onclick="generarQR()">1. Generar Código QR de Cobro</button>
+        <div id="zona-qr" class="qr-area hidden"></div>
+
+        <input type="text" id="qr-escaneado" style="margin-top: 20px;" placeholder="Pega aquí un código QR de cobro">
+        <button class="btn btn-secondary" onclick="procesarPagoQR()">2. Procesar Pago QR</button>
+
+        <button class="btn" style="background-color: #b71c1c; margin-top: 30px;" onclick="cerrarSesion()">Cerrar Sesión Seguro</button>
+    </div>
+
+    <!-- --- LÓGICA JAVASCRIPT --- -->
+    <script>
+        // Simulación de base de datos en memoria con cuentas de prueba iniciales
+        let usuariosDB = {
+            "alex": { titular: "alex", contrasena: "1234", numero_cuenta: "CN-8812", saldo: 24500.00 },
+            "edison": { titular: "edison", contrasena: "5678", numero_cuenta: "CN-4321", saldo: 15300.50 }
+        };
+
+        let usuarioActivo = null;
+
+        function actualizarInterfaz() {
+            if (!usuarioActivo) return;
+            document.getElementById('nombre-titular').innerText = usuarioActivo.titular.toUpperCase();
+            document.getElementById('txt-cuenta').innerText = usuarioActivo.numero_cuenta;
+            document.getElementById('txt-saldo').innerText = "Q" + usuarioActivo.saldo.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function registrarCuenta() {
+            let user = document.getElementById('reg-usuario').value.trim().toLowerCase();
+            let pass = document.getElementById('reg-password').value;
+
+            if (!user || !pass) {
+                alert("❌ Por favor llena todos los campos.");
+                return;
+            }
+            if (usuariosDB[user]) {
+                alert("❌ El nombre de usuario ya existe.");
+                return;
+            }
+
+            // Genera saldo aleatorio sin pasar de los 50,000 Quetzales
+            let saldoAleatorio = Math.random() * (50000 - 1) + 1;
+            let numCuenta = "CN-" + Math.floor(1000 + Math.random() * 9000);
+
+            usuariosDB[user] = {
+                titular: user,
+                contrasena: pass,
+                numero_cuenta: numCuenta,
+                saldo: parseFloat(saldoAleatorio.toFixed(2))
+            };
+
+            alert(`🎉 ¡Cuenta creada con éxito!\n📌 Usuario: ${user}\n🎁 Saldo Inicial Sorpresa Asignado.`);
+            document.getElementById('reg-usuario').value = "";
+            document.getElementById('reg-password').value = "";
+        }
+
+        function iniciarSesion() {
+            let user = document.getElementById('login-usuario').value.trim().toLowerCase();
+            let pass = document.getElementById('login-password').value;
+
+            if (usuariosDB[user] && usuariosDB[user].contrasena === pass) {
+                usuarioActivo = usuariosDB[user];
+                actualizarInterfaz();
+                document.getElementById('pantalla-acceso').classList.add('hidden');
+                document.getElementById('pantalla-banca').classList.remove('hidden');
+            } else {
+                alert("❌ Usuario o contraseña incorrectos.");
+            }
+        }
+
+        function realizarTransferencia() {
+            let destino = document.getElementById('trans-destino').value.trim().toLowerCase();
+            let monto = parseFloat(document.getElementById('trans-monto').value);
+
+            if (!usuariosDB[destino]) {
+                alert("❌ El usuario destino no existe.");
+                return;
+            }
+            if (destino === usuarioActivo.titular) {
+                alert("❌ No puedes transferirte a ti mismo.");
+                return;
+            }
+            if (isNaN(monto) || monto <= 0 || monto > usuarioActivo.saldo) {
+                alert("❌ Monto inválido o fondos insuficientes.");
+                return;
+            }
+
+            usuarioActivo.saldo -= monto;
+            usuariosDB[destino].saldo += monto;
+
+            alert(`✅ Transferencia exitosa. Se enviaron Q${monto.toFixed(2)} a ${destino}.`);
+            actualizarInterfaz();
+            document.getElementById('trans-destino').value = "";
+            document.getElementById('trans-monto').value = "";
+        }
+
+        function generarQR() {
+            let monto = parseFloat(document.getElementById('qr-monto').value);
+            if (isNaN(monto) || monto <= 0) {
+                alert("❌ Ingresa un monto de cobro válido.");
+                return;
+            }
+
+            let textoClarificado = `credinova_qr;${usuarioActivo.titular};${monto}`;
+            let tokenQR = btoa(textoClarificado);
+
+            let divQR = document.getElementById('zona-qr');
+            divQR.innerText = tokenQR;
+            divQR.classList.remove('hidden');
+        }
+
+        function procesarPagoQR() {
+            let codigo = document.getElementById('qr-escaneado').value.trim();
+            try {
+                let decodificado = atob(codigo);
+                if (decodificado.startsWith("credinova_qr;")) {
+                    let partes = decodificado.split(";");
+                    let destino = partes[1];
+                    let monto = parseFloat(partes[2]);
+
+                    if (destino === usuarioActivo.titular) {
+                        alert("❌ No puedes escanear tu propio código de cobro.");
+                        return;
+                    }
+                    if (!usuariosDB[destino]) {
+                        alert("❌ La cuenta destino ya no existe.");
+                        return;
+                    }
+                    if (monto > usuarioActivo.saldo) {
+                        alert("❌ Fondos insuficientes para pagar este QR.");
+                        return;
+                    }
+
+                    if (confirm(`¿Deseas pagar Q${monto.toFixed(2)} a ${destino} mediante QR?`)) {
+                        usuarioActivo.saldo -= monto;
+                        usuariosDB[destino].saldo += monto;
+                        alert("✅ ¡Pago QR Procesado Exitosamente!");
+                        actualizarInterfaz();
+                        document.getElementById('qr-escaneado').value = "";
+                    }
+                } else {
+                    alert("❌ Código QR no reconocido por CrediNova.");
+                }
+            } catch (e) {
+                alert("❌ Código QR inválido o corrupto.");
+            }
+        }
+
+        function cerrarSesion() {
+            usuarioActivo = null;
+            document.getElementById('login-usuario').value = "";
+            document.getElementById('login-password').value = "";
+            document.getElementById('zona-qr').classList.add('hidden');
+            document.getElementById('qr-monto').value = "";
+            document.getElementById('pantalla-banca').classList.add('hidden');
+            document.getElementById('pantalla-acceso').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
